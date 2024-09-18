@@ -592,6 +592,9 @@ function _set_all_attributes(model::AbstractFTheoryModel, model_dict::Dict{Strin
   set_journal_model_page(model, model_dict["journal_data"]["model_location"]["page"])
   set_journal_model_section(model, model_dict["journal_data"]["model_location"]["section"])
   
+  R, _ = polynomial_ring(QQ, collect(keys(explicit_model_sections(model))), cached = false)
+  f = hom(R, cox_ring(base_space(model)), collect(values(explicit_model_sections(model))))
+
   if haskey(model_dict, "birational_models")
     set_attribute!(model, :birational_literature_models => [str[6:end - 5] for str in model_dict["birational_models"]])
   end
@@ -605,33 +608,39 @@ function _set_all_attributes(model::AbstractFTheoryModel, model_dict::Dict{Strin
   end
   
   if haskey(model_dict["model_data"], "resolutions")
-    set_resolutions(model, [[[string.(c) for c in r[1]], string.(r[2])] for r in model_dict["model_data"]["resolutions"]])
+    set_attribute!(model, :resolutions => [[[string.(c) for c in r[1]], string.(r[2])] for r in model_dict["model_data"]["resolutions"]])
   end
   
   if haskey(model_dict["model_data"], "resolution_generating_sections")
-    value = [[[string.(k) for k in sec] for sec in res] for res in model_dict["model_data"]["resolution_generating_sections"]]
-    set_resolution_generating_sections(model, value)
+    vs = [[[string.(k) for k in sec] for sec in res] for res in model_dict["model_data"]["resolution_generating_sections"]]
+    result = [[[[f(eval_poly(a, R)) for a in b] for b in c] for c in d] for d in vs]
+    set_attribute!(model, :resolution_generating_sections => result)
   end
   
   if haskey(model_dict["model_data"], "resolution_zero_sections")
-    set_resolution_zero_sections(model, [[string.(a) for a in b] for b in model_dict["model_data"]["resolution_zero_sections"]])
+    vs = [[string.(a) for a in b] for b in model_dict["model_data"]["resolution_zero_sections"]]
+    result = [[[f(eval_poly(a, R)) for a in b] for b in c] for c in vs]
+    set_attribute!(model, :resolution_zero_sections => result)
   end
   
   if haskey(model_dict["model_data"], "weighted_resolutions")
-    set_weighted_resolutions(model, [[[[string.(c[1]), c[2]] for c in r[1]], string.(r[2])] for r in model_dict["model_data"]["weighted_resolutions"]])
+    set_attribute!(model, :weighted_resolutions => [[[[string.(c[1]), c[2]] for c in r[1]], string.(r[2])] for r in model_dict["model_data"]["weighted_resolutions"]])
   end
   
   if haskey(model_dict["model_data"], "weighted_resolution_generating_sections")
-    value = [[[string.(k) for k in sec] for sec in res] for res in model_dict["model_data"]["weighted_resolution_generating_sections"]]
-    set_weighted_resolution_generating_sections(model, value)
+    vs = [[[string.(k) for k in sec] for sec in res] for res in model_dict["model_data"]["weighted_resolution_generating_sections"]]
+    result = [[[[f(eval_poly(a, R)) for a in b] for b in c] for c in d] for d in vs]
+    set_attribute!(model, :weighted_resolution_generating_sections => result)
   end
   
   if haskey(model_dict["model_data"], "weighted_resolution_zero_sections")
-    set_weighted_resolution_zero_sections(model, [[string.(a) for a in b] for b in model_dict["model_data"]["weighted_resolution_zero_sections"]])
+    vs = [[string.(a) for a in b] for b in model_dict["model_data"]["weighted_resolution_zero_sections"]]
+    result = [[[f(eval_poly(a, R)) for a in b] for b in c] for c in vs]
+    set_attribute!(model, :weighted_resolution_zero_sections => result)
   end
   
   if haskey(model_dict["model_data"], "zero_section")
-    set_zero_section(model, string.(model_dict["model_data"]["zero_section"]))
+    set_attribute!(model, :zero_section => [f(eval_poly(l, R)) for l in string.(model_dict["model_data"]["zero_section"])])
   end
   
   if haskey(model_dict["model_data"], "zero_section_class")
@@ -639,11 +648,13 @@ function _set_all_attributes(model::AbstractFTheoryModel, model_dict::Dict{Strin
   end
 
   if haskey(model_dict["model_data"], "generating_sections")
-    set_generating_sections(model, map(k -> string.(k), model_dict["model_data"]["generating_sections"]))
+    vs = map(k -> string.(k), model_dict["model_data"]["generating_sections"])
+    set_attribute!(model, :generating_sections => [[f(eval_poly(l, R)) for l in k] for k in vs])
   end
   
   if haskey(model_dict["model_data"], "torsion_sections")
-    set_torsion_sections(model, map(k -> string.(k), model_dict["model_data"]["torsion_sections"]))
+    vs = map(k -> string.(k), model_dict["model_data"]["torsion_sections"]) 
+    set_attribute!(model, :torsion_sections => [[f(eval_poly(l, R)) for l in k] for k in vs])
   end
   
   if haskey(model_dict["model_descriptors"], "gauge_algebra")
